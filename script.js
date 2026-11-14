@@ -383,6 +383,12 @@ class WinnerStore {
     this.localStorageKey = 'xtreme_spin_winners_data';
   }
 
+  // Only attempt /api/* calls when running the local Node dev-server
+  isLocalServer() {
+    const host = window.location.hostname;
+    return (host === 'localhost' || host === '127.0.0.1') && window.location.port === '3000';
+  }
+
   // Get all winners (from LocalStorage or fallback)
   getLocalWinners() {
     try {
@@ -430,8 +436,9 @@ class WinnerStore {
     localStorage.setItem(this.localStorageKey, JSON.stringify([]));
   }
 
-  // Sync to Backend Server (if running)
+  // Sync to Backend Server (only when local dev-server is active)
   async saveToServer(entry) {
+    if (!this.isLocalServer()) return null;
     try {
       const response = await fetch('/api/spin', {
         method: 'POST',
@@ -442,15 +449,15 @@ class WinnerStore {
         return await response.json();
       }
     } catch (err) {
-      // Server not running; client-side storage is active
-      console.log('Running in standalone/browser mode (LocalStorage active).');
+      // Standalone/browser mode (LocalStorage active)
     }
     return null;
   }
 
-  // Fetch from server if online, else return local
+  // Fetch from local server if running on localhost:3000, else return LocalStorage
   async getAll() {
     const localList = this.getLocalWinners();
+    if (!this.isLocalServer()) return localList;
     try {
       const res = await fetch('/api/winners');
       if (res.ok) {
@@ -477,6 +484,7 @@ class WinnerStore {
 
   async clearAll() {
     this.clearLocal();
+    if (!this.isLocalServer()) return;
     try {
       await fetch('/api/winners', { method: 'DELETE' });
     } catch (e) {}
