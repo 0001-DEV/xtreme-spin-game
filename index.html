@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lucky Spin & Win - Mega Prize Wheel</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Bungee&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+
+  <!-- Background decorative light particles -->
+  <div class="bg-glow"></div>
+  <div class="bg-stars"></div>
+
+  <!-- Live Ticker Bar -->
+  <div class="live-ticker-wrap">
+    <div class="ticker-badge">
+      <img src="assets/logo.png" alt="Xtreme Cardz" class="ticker-logo-img">
+    </div>
+    <div class="ticker-track" id="tickerTrack">
+      <span class="ticker-item">Your Card Speaks Before You Do</span>
+      <span class="ticker-spinning-card"></span>
+      <span class="ticker-item">Your Brand Speaks When You Aren't In The Room</span>
+      <span class="ticker-spinning-card"></span>
+      <span class="ticker-item">Your Card Speaks Before You Do</span>
+      <span class="ticker-spinning-card"></span>
+      <span class="ticker-item">Your Brand Speaks When You Aren't In The Room</span>
+      <span class="ticker-spinning-card"></span>
+      <span class="ticker-item">Your Card Speaks Before You Do</span>
+      <span class="ticker-spinning-card"></span>
+      <span class="ticker-item">Your Brand Speaks When You Aren't In The Room</span>
+      <span class="ticker-spinning-card"></span>
+      <span class="ticker-item">Your Card Speaks Before You Do</span>
+      <span class="ticker-spinning-card"></span>
+      <span class="ticker-item">Your Brand Speaks When You Aren't In The Room</span>
+      <span class="ticker-spinning-card"></span>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand-badge">🔥 XTREME LUCKY PRIZE WHEEL</div>
+      <h1 class="main-title">SPIN & WIN <span class="gold-gradient">MEGA PRIZES!</span></h1>
+    </header>
+
+    <!-- Main Game Grid -->
+    <main class="game-layout">
+      
+      <!-- Left Column: Capital Card Themed Input Section -->
+      <section class="lead-panel">
+        
+        <!-- THE XTREME CAPITAL CARD CONTAINER -->
+        <div class="panel-card xtreme-metal-card capital-bg-card">
+          
+          <div class="card-title-block">
+            <h2 class="capital-card-heading">Player Registration</h2>
+            <p class="card-desc">Enter your details to claim your guaranteed prize on the lucky wheel.</p>
+          </div>
+
+          <!-- Input Form -->
+          <form id="spinForm" class="capital-card-form" novalidate>
+            <div class="form-group">
+              <label for="userName">
+                <span class="label-icon">👤</span> Full Name <span class="required">*</span>
+              </label>
+              <input type="text" id="userName" name="name" placeholder="Enter player full name" required autocomplete="name">
+              <span class="error-msg" id="nameError">Please enter your name.</span>
+            </div>
+
+            <div class="form-group">
+              <label for="userEmail">
+                <span class="label-icon">✉️</span> Email Address <span class="required">*</span>
+              </label>
+              <input type="email" id="userEmail" name="email" placeholder="name@email.com" required autocomplete="email">
+              <span class="error-msg" id="emailError">Valid email required.</span>
+            </div>
+
+            <div class="form-group">
+              <label for="userPhone">
+                <span class="label-icon">📱</span> Phone Number <span class="required">*</span>
+              </label>
+              <input type="tel" id="userPhone" name="phone" placeholder="+1 (555) 000-0000" required autocomplete="tel">
+              <span class="error-msg" id="phoneError">Valid phone required.</span>
+            </div>
+
+            <button type="submit" class="cta-spin-btn capital-btn" id="formSpinBtn">
+              <span class="btn-sparkle">✨</span>
+              <span class="btn-text">LOCK IN & SPIN NOW</span>
+              <span class="btn-sparkle">✨</span>
+            </button>
+          </form>
+
+          <div class="card-footer-notice">
+            <span>🔄 Form auto-clears after each spin for the next player</span>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Right Column: The Spin Wheel -->
+      <section class="wheel-panel">
+        <div class="wheel-wrapper">
+          <!-- Outer Blinking LED Ring -->
+          <div class="led-ring" id="ledRing"></div>
+
+          <!-- Pointer / Ticker Needle -->
+          <div class="wheel-pointer" id="wheelPointer">
+            <div class="pointer-arrow"></div>
+          </div>
+
+          <!-- Canvas Wheel -->
+          <canvas id="wheelCanvas" width="560" height="560"></canvas>
+
+          <!-- Central Spin Hub Button -->
+          <div class="center-hub" id="centerSpinHub" role="button" tabindex="0" title="Click to Spin!">
+            <div class="hub-pulse"></div>
+            <div class="hub-content">
+              <span class="hub-icon">🎯</span>
+              <span class="hub-text">SPIN</span>
+              <span class="hub-subtext">FREE</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="wheel-hint">
+          👆 Fill your card info on the left, then click <strong>SPIN</strong> to play!
+        </div>
+      </section>
+
+    </main>
+
+    <!-- SECTION: CONGRATULATIONS & WINNERS TABLE -->
+    <section class="congratulations-table-section glassmorphism" id="winnersSection">
+      <div class="table-header-row">
+        <div>
+          <span class="table-badge">🏆 OFFICIAL WINNERS LOG</span>
+          <h2 class="table-title">Congratulations Table & History</h2>
+          <p class="table-subtitle">All spins are automatically recorded here with winner details and prize codes.</p>
+        </div>
+        <div class="table-actions">
+          <input type="text" id="tableSearch" placeholder="🔍 Search winner, email, phone..." class="search-input">
+          <button class="btn-action btn-export" id="btnExportCsv" title="Download CSV for Excel / Google Sheets">
+            📥 Export CSV
+          </button>
+          <button class="btn-action btn-clear" id="btnClearHistory" title="Reset current winners log">
+            🗑️ Clear Log
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Count Stats -->
+      <div class="table-summary-bar">
+        <span>Total Winners Logged: <strong id="totalWinnersCount">0</strong></span>
+        <span>Most Popular Prize: <strong id="topPrizeName">Stainless Bottle</strong></span>
+        <span>Storage Status: <strong class="badge-online" id="storageStatus">● Auto-Saved (Browser & Server)</strong></span>
+      </div>
+
+      <!-- Responsive Table Container -->
+      <div class="table-responsive">
+        <table class="winners-table" id="winnersTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Winner Name</th>
+              <th>Prize Won</th>
+              <th>Claim Code</th>
+              <th>Email Address</th>
+              <th>Phone Number</th>
+              <th>Date & Time</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="winnersTableBody">
+            <tr class="empty-row">
+              <td colspan="8">
+                <div class="empty-state">
+                  <span class="empty-icon">🎡</span>
+                  <p>No spins yet! Fill in your details above and take your first spin to see your entry appear here.</p>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </div><!-- /container -->
+
+  <!-- POPUP MODAL: CLEAN DIRECT CONGRATULATIONS -->
+  <div class="modal-overlay" id="winModalOverlay">
+    <div class="modal-card win-modal simple-win-modal">
+      <button class="modal-close-btn" id="closeWinModal" aria-label="Close">&times;</button>
+      
+      <div class="simple-win-icon" id="winPrizeIcon">🍾</div>
+      <h2 class="simple-congrats-title">🎉 CONGRATULATIONS!</h2>
+      <p class="simple-win-text">
+        <span class="winner-highlight" id="winWinnerName">Alex</span>, you won <span class="prize-highlight" id="winPrizeName">Stainless Thermal Bottle</span>!
+      </p>
+
+      <button class="btn-claim-primary simple-ok-btn" id="btnClaimPrize">
+        OK
+      </button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
