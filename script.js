@@ -427,7 +427,7 @@ class WinnerStore {
 
   // Clear LocalStorage
   clearLocal() {
-    localStorage.removeItem(this.localStorageKey);
+    localStorage.setItem(this.localStorageKey, JSON.stringify([]));
   }
 
   // Sync to Backend Server (if running)
@@ -450,20 +450,29 @@ class WinnerStore {
 
   // Fetch from server if online, else return local
   async getAll() {
+    const localList = this.getLocalWinners();
     try {
       const res = await fetch('/api/winners');
       if (res.ok) {
         const json = await res.json();
-        if (json && json.data) {
-          // Sync to localStorage
-          localStorage.setItem(this.localStorageKey, JSON.stringify(json.data));
-          return json.data;
+        if (json && Array.isArray(json.data) && json.data.length > 0) {
+          const seen = new Set();
+          const merged = [];
+          for (const item of [...json.data, ...localList]) {
+            const key = item.claimCode || item.id;
+            if (key && !seen.has(key)) {
+              seen.add(key);
+              merged.push(item);
+            }
+          }
+          localStorage.setItem(this.localStorageKey, JSON.stringify(merged));
+          return merged;
         }
       }
     } catch (e) {
       // offline fallback
     }
-    return this.getLocalWinners();
+    return localList;
   }
 
   async clearAll() {
