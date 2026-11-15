@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Interactive Xtreme Lucky Spin Wheel Game with lead capture, instant congratulations modal, and automatic winner data logging.",
   "scripts": {
+    "build": "echo 'Static build ready'",
     "start": "node dev-server.js",
     "dev": "node dev-server.js"
   },
