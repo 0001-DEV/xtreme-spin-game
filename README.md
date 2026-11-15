@@ -42,7 +42,7 @@ The wheel comes pre-configured with 8 exciting prizes, including bottles and tre
 7. ☕ **Smart Temperature Mug** — Self-heating travel mug with temp controls (Worth $45.00)
 8. 📦 **Mega Mystery Gift Box** — Curated surprise tech accessories bundle (Worth $120.00)
 
-*To customize prizes, simply edit the `PRIZES` array in `app.js`.*
+*To customize prizes, simply edit the `PRIZES` array in `script.js`.*
 
 ---
 
@@ -69,8 +69,8 @@ The wheel comes pre-configured with 8 exciting prizes, including bottles and tre
 SPIN GAME/
 ├── index.html           # Main game interface and Congratulations Table
 ├── style.css            # Xtreme luxury theme & animations
-├── app.js               # Canvas wheel math, physics, audio synth, and storage logic
-├── server.js            # Native Node.js backend (serves app & saves data/winners.json)
+├── script.js            # Canvas wheel math, physics, audio synth, and storage logic
+├── dev-server.js        # Native Node.js backend (serves app & saves data/winners.json)
 ├── package.json         # Project metadata and start script
 ├── README.md            # Documentation and instructions
 ├── assets/              # Xtreme Card images and assets
