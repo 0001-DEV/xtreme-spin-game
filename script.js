@@ -601,11 +601,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const winClaimCode = document.getElementById('winClaimCode');
   const winWinnerDetails = document.getElementById('winWinnerDetails');
   const winTimestamp = document.getElementById('winTimestamp');
-  const modalRemarkInput = document.getElementById('modalRemarkInput');
   const btnClaimPrize = document.getElementById('btnClaimPrize');
   const btnViewTable = document.getElementById('btnViewTable');
 
   let activeModalRecordId = null;
+  let newlyAddedRecordId = null;
 
   // Table References
   const winnersTableBody = document.getElementById('winnersTableBody');
@@ -834,18 +834,15 @@ document.addEventListener('DOMContentLoaded', () => {
   centerSpinHub.addEventListener('click', handleSpinRequest);
 
   // ----------------------------------------------------
-  // Modal Display (Victory Win or Friendly Try Again with Remark Space)
+  // Modal Display (Victory Win or Friendly Try Again)
   // ----------------------------------------------------
   function showCongratulationsModal(record) {
     activeModalRecordId = record.id;
+    newlyAddedRecordId = record.id;
     const isTryAgain = Boolean(record.isTryAgain || (record.prize && (record.prize.isTryAgain || record.prize.name === 'Try again')));
     const titleEl = document.getElementById('winModalTitle') || document.querySelector('.simple-congrats-title');
     const textEl = document.getElementById('winModalText') || document.querySelector('.simple-win-text');
     const claimBtn = document.getElementById('btnClaimPrize');
-
-    if (modalRemarkInput) {
-      modalRemarkInput.value = record.remark || '';
-    }
 
     if (winPrizeIcon) {
       winPrizeIcon.textContent = (record.prize && record.prize.icon) ? record.prize.icon : (isTryAgain ? '🔄' : '🎁');
@@ -868,26 +865,32 @@ document.addEventListener('DOMContentLoaded', () => {
           <span class="winner-highlight">${escapeHtml(record.name)}</span>${orgSnippet}, you won <span class="prize-highlight">${escapeHtml(record.prize.name)}</span>!
         `;
       }
-      if (claimBtn) claimBtn.textContent = 'CLAIM PRIZE';
+      if (claimBtn) claimBtn.textContent = 'OK';
     }
 
     winModalOverlay.classList.add('active');
   }
 
   function hideModal() {
-    // Automatically save remarks entered in the post-game modal
-    if (modalRemarkInput && activeModalRecordId) {
-      const remarkText = modalRemarkInput.value.trim();
-      if (remarkText) {
-        store.updateRemark(activeModalRecordId, remarkText);
-        const cached = allWinnersCache.find(x => x.id === activeModalRecordId);
-        if (cached) cached.remark = remarkText;
-        renderFilteredTable();
-      }
-    }
     winModalOverlay.classList.remove('active');
+    const targetId = activeModalRecordId || newlyAddedRecordId;
     activeModalRecordId = null;
     resetFormToBlank();
+
+    // Scroll directly to the table where the result is pasted and focus the remark input
+    if (targetId && winnersSection) {
+      setTimeout(() => {
+        winnersSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const targetRow = document.querySelector(`tr[data-record-id="${targetId}"]`);
+        if (targetRow) {
+          targetRow.classList.add('newly-added-row');
+          const remarkInput = targetRow.querySelector('.table-remark-input');
+          if (remarkInput) {
+            remarkInput.focus();
+          }
+        }
+      }, 250);
+    }
   }
 
   if (closeWinModal) closeWinModal.addEventListener('click', hideModal);
@@ -906,20 +909,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnViewTable) {
     btnViewTable.addEventListener('click', () => {
       hideModal();
-      winnersSection.scrollIntoView({ behavior: 'smooth' });
-    });
-  }
-
-  // Also auto-save remark on blur or input from modal
-  if (modalRemarkInput) {
-    modalRemarkInput.addEventListener('change', () => {
-      if (activeModalRecordId) {
-        const remarkText = modalRemarkInput.value.trim();
-        store.updateRemark(activeModalRecordId, remarkText);
-        const cached = allWinnersCache.find(x => x.id === activeModalRecordId);
-        if (cached) cached.remark = remarkText;
-        renderFilteredTable();
-      }
     });
   }
 
@@ -1010,8 +999,9 @@ document.addEventListener('DOMContentLoaded', () => {
         ? `<span class="status-won-pill" style="background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3);">🔄 TRY AGAIN</span>`
         : `<span class="status-won-pill">✅ WON & LOGGED</span>`;
 
+      const isNew = (w.id === newlyAddedRecordId);
       return `
-        <tr>
+        <tr data-record-id="${w.id}" class="${isNew ? 'newly-added-row' : ''}">
           <td><strong>#${index + 1}</strong></td>
           <td>
             <div style="font-weight: 700; color: #fff;">${escapeHtml(w.name || 'Anonymous')}</div>
@@ -1036,7 +1026,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Attach listeners so remarks typed directly into table cells auto-save in real-time
     winnersTableBody.querySelectorAll('.table-remark-input').forEach(input => {
-      input.addEventListener('change', (e) => {
+      const saveRemark = (e) => {
         const id = e.target.getAttribute('data-id');
         const val = e.target.value.trim();
         if (id) {
@@ -1044,7 +1034,9 @@ document.addEventListener('DOMContentLoaded', () => {
           const cached = allWinnersCache.find(x => x.id === id);
           if (cached) cached.remark = val;
         }
-      });
+      };
+      input.addEventListener('change', saveRemark);
+      input.addEventListener('input', saveRemark);
     });
   }
 
