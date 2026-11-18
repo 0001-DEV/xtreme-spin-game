@@ -29,20 +29,18 @@ All spins will be automatically recorded to **`data/winners.json`** on your disk
 
 ---
 
-## 🎁 Included Placeholder Gift Objects
+## 🎁 Spin Wheel Prizes & Winning Odds
 
-The wheel comes pre-configured with 8 exciting prizes, including bottles and trending gadgets:
+The wheel is configured with 6 segments and probability-weighted outcomes:
 
-1. 🍾 **Stainless Thermal Bottle** — 750ml double-wall vacuum insulated flask (Worth $38.00)
-2. 🎧 **Wireless Earbuds Pro** — ANC Bluetooth 5.3 earbuds with 36h battery (Worth $69.00)
-3. ⌚ **Smart Fitness Watch** — AMOLED screen with 24/7 heart-rate tracking (Worth $85.00)
-4. 🎁 **$100 Shopping Voucher** — Instant store credit coupon (Worth $100.00)
-5. 🎒 **Waterproof Travel Backpack** — Anti-theft laptop bag with USB port (Worth $55.00)
-6. ⚡ **20,000mAh Power Bank** — 65W fast-charging portable charger (Worth $49.00)
-7. ☕ **Smart Temperature Mug** — Self-heating travel mug with temp controls (Worth $45.00)
-8. 📦 **Mega Mystery Gift Box** — Curated surprise tech accessories bundle (Worth $120.00)
+1. 🏷️ **20% off card order** — ~12.5% chance (Weight: 30)
+2. 🔥 **30% off card order** — ~12.5% chance (Weight: 30)
+3. 🪪 **Free ID card sample** — ~12.5% chance (Weight: 30)
+4. 📓 **Vintage Notepad** — ~12.5% chance (Weight: 30)
+5. 🍾 **Water bottle** — ~16.7% chance (Weight: 40)
+6. 🔄 **Try again** — ~33.3% chance (Weight: 80)
 
-*To customize prizes, simply edit the `PRIZES` array in `script.js`.*
+*To customize prizes or probabilities, edit the `PRIZES` array and weights in `script.js`.*
 
 ---
 

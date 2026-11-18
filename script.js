@@ -15,77 +15,86 @@
 const PRIZES = [
   {
     id: 1,
-    name: 'Stainless Thermal Bottle',
-    shortName: 'Thermal Bottle',
-    icon: '🍾',
-    value: '$38.00',
+    name: '20% off card order',
+    shortName: '20% OFF',
+    icon: '🏷️',
+    value: '20% Discount',
     color: '#e61e2b',
-    desc: 'Premium double-wall vacuum insulated 750ml water bottle. Keeps drinks cold for 24h & hot for 12h!'
+    desc: 'Enjoy an exclusive 20% discount on your next custom card order with Xtreme Cardz!',
+    weight: 30, // ~12.5%
+    isTryAgain: false
   },
   {
     id: 2,
-    name: 'Wireless Earbuds Pro',
-    shortName: 'Earbuds Pro',
-    icon: '🎧',
-    value: '$69.00',
-    color: '#ff5722',
-    desc: 'Active Noise Cancelling Bluetooth 5.3 earbuds with 36-hour charging case & deep bass.'
+    name: '30% off card order',
+    shortName: '30% OFF',
+    icon: '🔥',
+    value: '30% Discount',
+    color: '#ff6f00',
+    desc: 'Huge 30% savings automatically unlocked for your next custom card order!',
+    weight: 30, // ~12.5%
+    isTryAgain: false
   },
   {
     id: 3,
-    name: 'Smart Fitness Watch',
-    shortName: 'Smart Watch',
-    icon: '⌚',
-    value: '$85.00',
+    name: 'Free ID card sample',
+    shortName: 'Free ID Sample',
+    icon: '🪪',
+    value: 'Free Sample',
     color: '#b71c1c',
-    desc: 'AMOLED display, 24/7 heart-rate tracking, sleep analyzer, and 5ATM waterproof casing.'
+    desc: 'Complimentary premium physical ID card sample pack delivered directly to you!',
+    weight: 30, // ~12.5%
+    isTryAgain: false
   },
   {
     id: 4,
-    name: '$100 Shopping Voucher',
-    shortName: '$100 Credit',
-    icon: '🎁',
-    value: '$100.00',
-    color: '#ff8f00',
-    desc: 'Instant $100 store shopping credit automatically unlocked for your next order.'
+    name: 'Vintage Notepad',
+    shortName: 'Vintage Notepad',
+    icon: '📓',
+    value: 'Executive Gift',
+    color: '#8d6e63',
+    desc: 'Exclusive vintage-finish hardbound executive notebook with luxury finish.',
+    weight: 30, // ~12.5%
+    isTryAgain: false
   },
   {
     id: 5,
-    name: 'Waterproof Travel Backpack',
-    shortName: 'Travel Backpack',
-    icon: '🎒',
-    value: '$55.00',
+    name: 'Water bottle',
+    shortName: 'Water bottle',
+    icon: '🍾',
+    value: 'Thermal Bottle',
     color: '#c2185b',
-    desc: 'Ergonomic anti-theft laptop backpack with built-in USB charging port & weatherproofing.'
+    desc: 'Premium double-wall vacuum insulated stainless steel thermal water bottle.',
+    weight: 40, // ~16.7%
+    isTryAgain: false
   },
   {
     id: 6,
-    name: '20,000mAh Fast Power Bank',
-    shortName: 'Power Bank',
-    icon: '⚡',
-    value: '$49.00',
-    color: '#e65100',
-    desc: '65W Power Delivery high-speed portable battery bank for smartphones, tablets, and laptops.'
-  },
-  {
-    id: 7,
-    name: 'Smart Temperature Mug',
-    shortName: 'Smart Mug',
-    icon: '☕',
-    value: '$45.00',
-    color: '#880e4f',
-    desc: 'Self-heating ceramic travel mug with precision temperature touch control and charging coaster.'
-  },
-  {
-    id: 8,
-    name: 'Mega Mystery Gift Box',
-    shortName: 'Mystery Box',
-    icon: '📦',
-    value: '$120.00',
-    color: '#ff6f00',
-    desc: 'Exclusive mystery bundle loaded with 3 top trending smart gadgets and accessories!'
+    name: 'Try again',
+    shortName: 'Try again',
+    icon: '🔄',
+    value: 'Better Luck',
+    color: '#37474f',
+    desc: 'So close! Give the wheel another spin for your chance to win.',
+    weight: 80, // ~33.3%
+    isTryAgain: true
   }
 ];
+
+// ========================================================
+// PROBABILITY-WEIGHTED RANDOM SELECTION
+// ========================================================
+function getWeightedPrizeIndex() {
+  const totalWeight = PRIZES.reduce((sum, p) => sum + (p.weight || 1), 0);
+  let random = Math.random() * totalWeight;
+  for (let i = 0; i < PRIZES.length; i++) {
+    if (random < PRIZES[i].weight) {
+      return i;
+    }
+    random -= PRIZES[i].weight;
+  }
+  return PRIZES.length - 1;
+}
 
 // ========================================================
 // 2. WEB AUDIO SOUND SYNTHESIZER (No external files needed)
@@ -151,6 +160,30 @@ class SoundFX {
         osc.connect(gain);
         gain.connect(this.ctx.destination);
 
+        osc.start(startTime);
+        osc.stop(startTime + dur);
+      });
+    } catch (e) {}
+  }
+
+  playTryAgainSound() {
+    try {
+      this.init();
+      if (!this.ctx) return;
+      const notes = [440, 349.23]; // A4 -> F4 gentle encouragement chime
+      notes.forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        const startTime = this.ctx.currentTime + idx * 0.16;
+        const dur = 0.35;
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, startTime);
+        gain.gain.setValueAtTime(0.2, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + dur);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
         osc.start(startTime);
         osc.stop(startTime + dur);
       });
@@ -402,8 +435,9 @@ class WinnerStore {
           name: 'Sarah Jenkins',
           email: 'sarah.j@example.com',
           phone: '+1 (555) 014-8821',
-          prize: PRIZES[0], // Stainless Thermal Bottle
+          prize: PRIZES[4], // Water bottle
           claimCode: 'XTR-7K9A-4821',
+          isTryAgain: false,
           timestamp: new Date(Date.now() - 3600000).toISOString()
         },
         {
@@ -411,8 +445,9 @@ class WinnerStore {
           name: 'Marcus Brody',
           email: 'm.brody@example.com',
           phone: '+1 (555) 019-3342',
-          prize: PRIZES[3], // $100 Shopping Voucher
+          prize: PRIZES[0], // 20% off card order
           claimCode: 'XTR-2X9B-6184',
+          isTryAgain: false,
           timestamp: new Date(Date.now() - 7200000).toISOString()
         }
       ];
@@ -612,33 +647,39 @@ document.addEventListener('DOMContentLoaded', () => {
     formSpinBtn.disabled = true;
     centerSpinHub.style.pointerEvents = 'none';
 
-    // Pick a winning prize
-    // We can weight or randomize evenly across prizes
-    // For realistic feel, randomize from PRIZES array
-    const targetPrizeIndex = Math.floor(Math.random() * PRIZES.length);
+    // Pick a winning prize using exact probability weights
+    const targetPrizeIndex = getWeightedPrizeIndex();
 
     wheel.spinTo(targetPrizeIndex, async (wonPrize) => {
       // Spin finished!
       formSpinBtn.disabled = false;
       centerSpinHub.style.pointerEvents = 'auto';
 
-      // Play victory sound
-      sfx.playWinFanfare();
+      const isTryAgain = Boolean(wonPrize.isTryAgain || wonPrize.name === 'Try again');
 
-      // Launch Confetti
-      launchConfetti();
+      if (isTryAgain) {
+        // Play gentle try-again sound
+        sfx.playTryAgainSound();
+      } else {
+        // Play victory sound & Launch Confetti
+        sfx.playWinFanfare();
+        launchConfetti();
+      }
 
-      // Generate unique claim code
-      const claimCode = 'XTR-' + Math.random().toString(36).substring(2, 6).toUpperCase() + '-' + Math.floor(1000 + Math.random() * 9000);
+      // Generate unique claim code for wins, or '-' for try again
+      const claimCode = isTryAgain 
+        ? '—' 
+        : ('XTR-' + Math.random().toString(36).substring(2, 6).toUpperCase() + '-' + Math.floor(1000 + Math.random() * 9000));
       const timestamp = new Date().toISOString();
 
       const winnerRecord = {
-        id: 'WIN-' + Date.now().toString(36).toUpperCase(),
+        id: (isTryAgain ? 'SPIN-' : 'WIN-') + Date.now().toString(36).toUpperCase(),
         name: nameInput.value.trim(),
         email: emailInput.value.trim(),
         phone: phoneInput.value.trim(),
         prize: wonPrize,
         claimCode: claimCode,
+        isTryAgain: isTryAgain,
         timestamp: timestamp
       };
 
@@ -651,7 +692,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // 3. Update table
       loadAndRenderWinners();
 
-      // 4. Show Congratulations Modal
+      // 4. Show Congratulations / Try Again Modal
       showCongratulationsModal(winnerRecord);
 
       // 5. Automatically reset input form to blank for the next person!
@@ -672,19 +713,41 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-
-
   // Attach triggers
   form.addEventListener('submit', handleSpinRequest);
   centerSpinHub.addEventListener('click', handleSpinRequest);
 
   // ----------------------------------------------------
-  // Congratulations Modal Display (Clean & Direct)
+  // Modal Display (Victory Win or Friendly Try Again)
   // ----------------------------------------------------
   function showCongratulationsModal(record) {
-    if (winWinnerName) winWinnerName.textContent = record.name;
-    if (winPrizeIcon) winPrizeIcon.textContent = record.prize.icon;
-    if (winPrizeName) winPrizeName.textContent = record.prize.name;
+    const isTryAgain = Boolean(record.isTryAgain || (record.prize && (record.prize.isTryAgain || record.prize.name === 'Try again')));
+    const titleEl = document.getElementById('winModalTitle') || document.querySelector('.simple-congrats-title');
+    const textEl = document.getElementById('winModalText') || document.querySelector('.simple-win-text');
+    const claimBtn = document.getElementById('btnClaimPrize');
+
+    if (winPrizeIcon) {
+      winPrizeIcon.textContent = (record.prize && record.prize.icon) ? record.prize.icon : (isTryAgain ? '🔄' : '🎁');
+    }
+
+    if (isTryAgain) {
+      if (titleEl) titleEl.textContent = '🎯 SO CLOSE!';
+      if (textEl) {
+        textEl.innerHTML = `
+          <span class="winner-highlight">${escapeHtml(record.name)}</span>, you got <span class="prize-highlight" style="background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border-color: rgba(148, 163, 184, 0.35);">Try again</span>!
+          <br><span style="font-size: 0.95rem; color: #94a3b8; display: inline-block; margin-top: 8px;">Better luck next time — take another spin!</span>
+        `;
+      }
+      if (claimBtn) claimBtn.textContent = 'SPIN AGAIN';
+    } else {
+      if (titleEl) titleEl.textContent = '🎉 CONGRATULATIONS!';
+      if (textEl) {
+        textEl.innerHTML = `
+          <span class="winner-highlight">${escapeHtml(record.name)}</span>, you won <span class="prize-highlight">${escapeHtml(record.prize.name)}</span>!
+        `;
+      }
+      if (claimBtn) claimBtn.textContent = 'OK';
+    }
 
     winModalOverlay.classList.add('active');
   }
@@ -788,9 +851,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     winnersTableBody.innerHTML = filtered.map((w, index) => {
+      const isTryAgain = Boolean(w.isTryAgain || (w.prize && (w.prize.isTryAgain || w.prize.name === 'Try again')));
       const prizeName = w.prize && w.prize.name ? w.prize.name : (w.prize || 'Special Gift');
-      const prizeIcon = w.prize && w.prize.icon ? w.prize.icon : '🎁';
+      const prizeIcon = w.prize && w.prize.icon ? w.prize.icon : (isTryAgain ? '🔄' : '🎁');
       const formattedDate = w.timestamp ? new Date(w.timestamp).toLocaleString() : 'Just now';
+      const codeHtml = isTryAgain 
+        ? '<span style="color: #64748b; font-weight: 700;">—</span>' 
+        : `<span class="code-pill">${escapeHtml(w.claimCode || 'CLAIM-CODE')}</span>`;
+      const statusHtml = isTryAgain
+        ? `<span class="status-won-pill" style="background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3);">🔄 TRY AGAIN</span>`
+        : `<span class="status-won-pill">✅ WON & LOGGED</span>`;
 
       return `
         <tr>
@@ -801,15 +871,11 @@ document.addEventListener('DOMContentLoaded', () => {
           <td>
             <span class="prize-badge">${prizeIcon} ${escapeHtml(prizeName)}</span>
           </td>
-          <td>
-            <span class="code-pill">${escapeHtml(w.claimCode || 'CLAIM-CODE')}</span>
-          </td>
+          <td>${codeHtml}</td>
           <td>${escapeHtml(w.email || '-')}</td>
           <td>${escapeHtml(w.phone || '-')}</td>
           <td style="color: var(--text-muted); font-size: 0.85rem;">${formattedDate}</td>
-          <td>
-            <span class="status-won-pill">✅ WON & LOGGED</span>
-          </td>
+          <td>${statusHtml}</td>
         </tr>
       `;
     }).join('');
