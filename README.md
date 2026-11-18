@@ -46,18 +46,19 @@ The wheel is configured with 6 segments and probability-weighted outcomes:
 
 ## ✨ Features
 
-- **Xtreme VIP Card Form**: Styled after the premium metal card from the Xtreme Card website, requiring player's Full Name, Email, and Phone Number with real-time validation.
-- **Realistic Canvas Wheel**: 8 colorful slices, golden dividers, outer LED blinking bulbs, and a top golden needle indicator.
+- **Xtreme VIP Card Form**: Styled after the premium metal card, requiring player's Full Name, Organisation, Email, and Phone Number with real-time validation and **duplicate submission prevention** (each player is limited to 1 spin).
+- **Realistic Canvas Wheel**: 6 colorful slices, golden dividers, outer LED blinking bulbs, and a top golden needle indicator with calibrated winning odds.
 - **Physics Easing & Audio Clicks**: Realistic deceleration easing and ticker sounds synthesized with Web Audio API (zero external audio files needed).
-- **Celebratory Win Experience**: Confetti fireworks burst, victory fanfare chime, and a glowing Congratulations Modal showing the winner's name, item won, estimated value, and unique claim code.
+- **Celebratory Win Experience & Remarks**: Confetti fireworks burst, victory fanfare chime, and a glowing modal with space to input custom remarks/notes.
 - **Automatic Congratulations Table**:
-  - Live table listing every spin with Name, Email, Phone, Prize Won, Claim Code, and Date & Time.
-  - Live search bar to filter by name, email, or prize.
+  - Live table listing every spin with Name, Organisation, Prize Won, Claim Code, Email, Phone, Remarks, and Date & Time.
+  - Inline editable remarks directly in table rows.
+  - Live search bar to filter by name, organisation, email, prize, or remark.
   - **1-Click "Export CSV"** button to download leads directly into Excel or Google Sheets.
   - Clear Log option with safety confirmation.
 - **Dual Persistence**:
   - Automatically saves in browser (`localStorage`).
-  - Automatically posts to backend server API (`/api/spin`) and saves to `data/winners.json`.
+  - Automatically posts to backend server API (`/api/spin` and `/api/remark`) and saves to `data/winners.json`.
 
 ---
 
@@ -85,8 +86,11 @@ SPIN GAME/
 Click the **"📥 Export CSV"** button on the Congratulations Table at any time to download a formatted spreadsheet (`.csv`) containing:
 - Record ID
 - Full Name
+- Organisation
 - Email Address
 - Phone Number
 - Prize Won
 - Claim Code
+- Remarks
 - Date & Time
+- Status

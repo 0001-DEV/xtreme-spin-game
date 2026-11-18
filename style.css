@@ -1162,6 +1162,100 @@ body {
 }
 
 /* ========================================================
+   DUPLICATE WARNING & REMARK INPUT STYLES
+   ======================================================== */
+.duplicate-alert {
+  display: none;
+  background: rgba(220, 38, 38, 0.18);
+  border: 1.5px solid rgba(239, 68, 68, 0.65);
+  border-radius: 10px;
+  padding: 11px 14px;
+  color: #fecaca;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  text-align: left;
+  box-shadow: 0 4px 15px rgba(220, 38, 38, 0.25);
+  animation: shakeAlert 0.35s ease-in-out;
+}
+
+.duplicate-alert.visible {
+  display: block;
+}
+
+@keyframes shakeAlert {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
+.modal-remark-group {
+  margin: 16px 0 20px;
+  text-align: left;
+}
+
+.modal-remark-label {
+  display: block;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #ffe680;
+  margin-bottom: 6px;
+  letter-spacing: 0.3px;
+}
+
+.modal-remark-textarea {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1.5px solid rgba(255, 215, 0, 0.4);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  outline: none;
+  resize: vertical;
+  min-height: 56px;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.modal-remark-textarea:focus {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 14px rgba(255, 215, 0, 0.4);
+  background: rgba(10, 2, 4, 0.85);
+}
+
+.modal-remark-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.38);
+}
+
+.table-remark-input {
+  width: 100%;
+  min-width: 130px;
+  background: rgba(0, 0, 0, 0.38);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: #f1f5f9;
+  font-family: inherit;
+  font-size: 0.84rem;
+  outline: none;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.table-remark-input:focus {
+  border-color: #ffd700;
+  background: rgba(0, 0, 0, 0.85);
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+  color: #fff;
+}
+
+.table-remark-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* ========================================================
    RESPONSIVENESS
    ======================================================== */
 @media (max-width: 600px) {

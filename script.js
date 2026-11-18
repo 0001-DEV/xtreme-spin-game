@@ -433,20 +433,24 @@ class WinnerStore {
         {
           id: 'WIN-M5L9K1-742',
           name: 'Sarah Jenkins',
+          organization: 'Jenkins Creative Studio',
           email: 'sarah.j@example.com',
           phone: '+1 (555) 014-8821',
           prize: PRIZES[4], // Water bottle
           claimCode: 'XTR-7K9A-4821',
+          remark: 'VIP client inquiry',
           isTryAgain: false,
           timestamp: new Date(Date.now() - 3600000).toISOString()
         },
         {
           id: 'WIN-M5L8Z3-195',
           name: 'Marcus Brody',
+          organization: 'Brody Tech Solutions',
           email: 'm.brody@example.com',
           phone: '+1 (555) 019-3342',
           prize: PRIZES[0], // 20% off card order
           claimCode: 'XTR-2X9B-6184',
+          remark: 'Interested in metal cards',
           isTryAgain: false,
           timestamp: new Date(Date.now() - 7200000).toISOString()
         }
@@ -456,6 +460,45 @@ class WinnerStore {
     } catch (e) {
       return [];
     }
+  }
+
+  // Check if player has already entered / played based on email or phone
+  hasPlayerAlreadyPlayed(email, phone) {
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const cleanPhone = (phone || '').replace(/[^0-9]/g, '');
+    if (!cleanEmail && !cleanPhone) return false;
+
+    const list = this.getLocalWinners();
+    return list.some(entry => {
+      const entryEmail = (entry.email || '').trim().toLowerCase();
+      const entryPhone = (entry.phone || '').replace(/[^0-9]/g, '');
+      const emailMatches = Boolean(cleanEmail && entryEmail && entryEmail === cleanEmail);
+      const phoneMatches = Boolean(cleanPhone && cleanPhone.length >= 7 && entryPhone && entryPhone === cleanPhone);
+      return emailMatches || phoneMatches;
+    });
+  }
+
+  // Update remark for an entry by ID
+  updateRemark(id, remark) {
+    const list = this.getLocalWinners();
+    const target = list.find(w => w.id === id);
+    if (target) {
+      target.remark = String(remark || '').trim();
+      localStorage.setItem(this.localStorageKey, JSON.stringify(list));
+      this.syncRemarkToServer(id, target.remark);
+    }
+    return list;
+  }
+
+  async syncRemarkToServer(id, remark) {
+    if (!this.isLocalServer()) return;
+    try {
+      await fetch('/api/remark', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, remark })
+      });
+    } catch (e) {}
   }
 
   // Save new winner to LocalStorage
@@ -535,12 +578,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // DOM References
   const form = document.getElementById('spinForm');
   const nameInput = document.getElementById('userName');
+  const orgInput = document.getElementById('userOrg');
   const emailInput = document.getElementById('userEmail');
   const phoneInput = document.getElementById('userPhone');
+  const duplicateAlert = document.getElementById('duplicateAlert');
   const formSpinBtn = document.getElementById('formSpinBtn');
   const centerSpinHub = document.getElementById('centerSpinHub');
 
   const nameError = document.getElementById('nameError');
+  const orgError = document.getElementById('orgError');
   const emailError = document.getElementById('emailError');
   const phoneError = document.getElementById('phoneError');
 
@@ -555,8 +601,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const winClaimCode = document.getElementById('winClaimCode');
   const winWinnerDetails = document.getElementById('winWinnerDetails');
   const winTimestamp = document.getElementById('winTimestamp');
+  const modalRemarkInput = document.getElementById('modalRemarkInput');
   const btnClaimPrize = document.getElementById('btnClaimPrize');
   const btnViewTable = document.getElementById('btnViewTable');
+
+  let activeModalRecordId = null;
 
   // Table References
   const winnersTableBody = document.getElementById('winnersTableBody');
@@ -576,7 +625,7 @@ document.addEventListener('DOMContentLoaded', () => {
   startCountdown(4 * 60 + 59);
 
   // ----------------------------------------------------
-  // Form Validation
+  // Form Validation & Real-time Duplicate Player Check
   // ----------------------------------------------------
   function validateForm() {
     let isValid = true;
@@ -589,6 +638,16 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       nameInput.classList.remove('input-error');
       nameError.classList.remove('visible');
+    }
+
+    // Organisation Validation
+    if (orgInput && !orgInput.value.trim()) {
+      orgInput.classList.add('input-error');
+      if (orgError) orgError.classList.add('visible');
+      isValid = false;
+    } else if (orgInput) {
+      orgInput.classList.remove('input-error');
+      if (orgError) orgError.classList.remove('visible');
     }
 
     // Email Validation
@@ -613,17 +672,62 @@ document.addEventListener('DOMContentLoaded', () => {
       phoneError.classList.remove('visible');
     }
 
+    // Duplicate Check: Each participant can only play once
+    const emailVal = emailInput.value.trim().toLowerCase();
+    if (store.hasPlayerAlreadyPlayed(emailVal, phoneClean)) {
+      if (duplicateAlert) {
+        duplicateAlert.innerHTML = `🚫 <strong>Access Denied:</strong> A spin has already been recorded for this email or phone number! Only <strong>1 spin</strong> per person is allowed.`;
+        duplicateAlert.classList.add('visible');
+        duplicateAlert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+      formSpinBtn.disabled = true;
+      isValid = false;
+    } else {
+      if (duplicateAlert) duplicateAlert.classList.remove('visible');
+    }
+
     return isValid;
   }
 
+  // Real-time duplicate check when user enters email or phone
+  function checkDuplicateLive() {
+    const emailVal = emailInput.value.trim().toLowerCase();
+    const phoneClean = phoneInput.value.replace(/[^0-9]/g, '');
+    if (emailVal.length > 4 || phoneClean.length >= 7) {
+      if (store.hasPlayerAlreadyPlayed(emailVal, phoneClean)) {
+        if (duplicateAlert) {
+          duplicateAlert.innerHTML = `🚫 <strong>Already Played:</strong> A spin has already been recorded for this email or phone number! Only <strong>1 spin</strong> per person is allowed.`;
+          duplicateAlert.classList.add('visible');
+        }
+        formSpinBtn.disabled = true;
+        formSpinBtn.style.opacity = '0.6';
+        formSpinBtn.style.cursor = 'not-allowed';
+        centerSpinHub.style.pointerEvents = 'none';
+        return true;
+      }
+    }
+    if (duplicateAlert) duplicateAlert.classList.remove('visible');
+    if (!wheel.isSpinning) {
+      formSpinBtn.disabled = false;
+      formSpinBtn.style.opacity = '1';
+      formSpinBtn.style.cursor = 'pointer';
+      centerSpinHub.style.pointerEvents = 'auto';
+    }
+    return false;
+  }
+
   // Clear validation on input
-  [nameInput, emailInput, phoneInput].forEach(inp => {
+  [nameInput, orgInput, emailInput, phoneInput].forEach(inp => {
+    if (!inp) return;
     inp.addEventListener('input', () => {
       inp.classList.remove('input-error');
-      const err = inp.parentElement.querySelector('.error-msg');
+      const err = inp.parentElement ? inp.parentElement.querySelector('.error-msg') : null;
       if (err) err.classList.remove('visible');
     });
   });
+
+  emailInput.addEventListener('input', checkDuplicateLive);
+  phoneInput.addEventListener('input', checkDuplicateLive);
 
   // ----------------------------------------------------
   // Spin Trigger Handler
@@ -675,13 +779,17 @@ document.addEventListener('DOMContentLoaded', () => {
       const winnerRecord = {
         id: (isTryAgain ? 'SPIN-' : 'WIN-') + Date.now().toString(36).toUpperCase(),
         name: nameInput.value.trim(),
+        organization: orgInput ? orgInput.value.trim() : '',
         email: emailInput.value.trim(),
         phone: phoneInput.value.trim(),
         prize: wonPrize,
         claimCode: claimCode,
+        remark: '',
         isTryAgain: isTryAgain,
         timestamp: timestamp
       };
+
+      activeModalRecordId = winnerRecord.id;
 
       // 1. Save locally
       store.saveLocal(winnerRecord);
@@ -704,13 +812,21 @@ document.addEventListener('DOMContentLoaded', () => {
   function resetFormToBlank() {
     form.reset();
     nameInput.value = '';
+    if (orgInput) orgInput.value = '';
     emailInput.value = '';
     phoneInput.value = '';
-    [nameInput, emailInput, phoneInput].forEach(inp => {
-      inp.classList.remove('input-error');
-      const err = inp.parentElement.querySelector('.error-msg');
-      if (err) err.classList.remove('visible');
+    if (duplicateAlert) duplicateAlert.classList.remove('visible');
+    [nameInput, orgInput, emailInput, phoneInput].forEach(inp => {
+      if (inp) {
+        inp.classList.remove('input-error');
+        const err = inp.parentElement ? inp.parentElement.querySelector('.error-msg') : null;
+        if (err) err.classList.remove('visible');
+      }
     });
+    formSpinBtn.disabled = false;
+    formSpinBtn.style.opacity = '1';
+    formSpinBtn.style.cursor = 'pointer';
+    centerSpinHub.style.pointerEvents = 'auto';
   }
 
   // Attach triggers
@@ -718,13 +834,18 @@ document.addEventListener('DOMContentLoaded', () => {
   centerSpinHub.addEventListener('click', handleSpinRequest);
 
   // ----------------------------------------------------
-  // Modal Display (Victory Win or Friendly Try Again)
+  // Modal Display (Victory Win or Friendly Try Again with Remark Space)
   // ----------------------------------------------------
   function showCongratulationsModal(record) {
+    activeModalRecordId = record.id;
     const isTryAgain = Boolean(record.isTryAgain || (record.prize && (record.prize.isTryAgain || record.prize.name === 'Try again')));
     const titleEl = document.getElementById('winModalTitle') || document.querySelector('.simple-congrats-title');
     const textEl = document.getElementById('winModalText') || document.querySelector('.simple-win-text');
     const claimBtn = document.getElementById('btnClaimPrize');
+
+    if (modalRemarkInput) {
+      modalRemarkInput.value = record.remark || '';
+    }
 
     if (winPrizeIcon) {
       winPrizeIcon.textContent = (record.prize && record.prize.icon) ? record.prize.icon : (isTryAgain ? '🔄' : '🎁');
@@ -735,25 +856,37 @@ document.addEventListener('DOMContentLoaded', () => {
       if (textEl) {
         textEl.innerHTML = `
           <span class="winner-highlight">${escapeHtml(record.name)}</span>, you got <span class="prize-highlight" style="background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border-color: rgba(148, 163, 184, 0.35);">Try again</span>!
-          <br><span style="font-size: 0.95rem; color: #94a3b8; display: inline-block; margin-top: 8px;">Better luck next time — take another spin!</span>
-        `;
-      }
-      if (claimBtn) claimBtn.textContent = 'SPIN AGAIN';
-    } else {
-      if (titleEl) titleEl.textContent = '🎉 CONGRATULATIONS!';
-      if (textEl) {
-        textEl.innerHTML = `
-          <span class="winner-highlight">${escapeHtml(record.name)}</span>, you won <span class="prize-highlight">${escapeHtml(record.prize.name)}</span>!
+          <br><span style="font-size: 0.95rem; color: #94a3b8; display: inline-block; margin-top: 8px;">Better luck next time — thank you for playing!</span>
         `;
       }
       if (claimBtn) claimBtn.textContent = 'OK';
+    } else {
+      if (titleEl) titleEl.textContent = '🎉 CONGRATULATIONS!';
+      if (textEl) {
+        const orgSnippet = record.organization ? ` (<span style="color: #ffe680;">${escapeHtml(record.organization)}</span>)` : '';
+        textEl.innerHTML = `
+          <span class="winner-highlight">${escapeHtml(record.name)}</span>${orgSnippet}, you won <span class="prize-highlight">${escapeHtml(record.prize.name)}</span>!
+        `;
+      }
+      if (claimBtn) claimBtn.textContent = 'CLAIM PRIZE';
     }
 
     winModalOverlay.classList.add('active');
   }
 
   function hideModal() {
+    // Automatically save remarks entered in the post-game modal
+    if (modalRemarkInput && activeModalRecordId) {
+      const remarkText = modalRemarkInput.value.trim();
+      if (remarkText) {
+        store.updateRemark(activeModalRecordId, remarkText);
+        const cached = allWinnersCache.find(x => x.id === activeModalRecordId);
+        if (cached) cached.remark = remarkText;
+        renderFilteredTable();
+      }
+    }
     winModalOverlay.classList.remove('active');
+    activeModalRecordId = null;
     resetFormToBlank();
   }
 
@@ -774,6 +907,19 @@ document.addEventListener('DOMContentLoaded', () => {
     btnViewTable.addEventListener('click', () => {
       hideModal();
       winnersSection.scrollIntoView({ behavior: 'smooth' });
+    });
+  }
+
+  // Also auto-save remark on blur or input from modal
+  if (modalRemarkInput) {
+    modalRemarkInput.addEventListener('change', () => {
+      if (activeModalRecordId) {
+        const remarkText = modalRemarkInput.value.trim();
+        store.updateRemark(activeModalRecordId, remarkText);
+        const cached = allWinnersCache.find(x => x.id === activeModalRecordId);
+        if (cached) cached.remark = remarkText;
+        renderFilteredTable();
+      }
     });
   }
 
@@ -827,6 +973,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const prizeTitle = (w.prize && w.prize.name) ? w.prize.name : (w.prize || '');
       return (
         (w.name || '').toLowerCase().includes(searchTerm) ||
+        (w.organization || '').toLowerCase().includes(searchTerm) ||
+        (w.remark || '').toLowerCase().includes(searchTerm) ||
         (w.email || '').toLowerCase().includes(searchTerm) ||
         (w.phone || '').includes(searchTerm) ||
         (w.claimCode || '').toLowerCase().includes(searchTerm) ||
@@ -839,7 +987,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (filtered.length === 0) {
       winnersTableBody.innerHTML = `
         <tr class="empty-row">
-          <td colspan="8">
+          <td colspan="10">
             <div class="empty-state">
               <span class="empty-icon">${allWinnersCache.length === 0 ? '🎡' : '🔍'}</span>
               <p>${allWinnersCache.length === 0 ? 'No spins yet! Enter your details above and take your first spin.' : 'No matching winners found for your search.'}</p>
@@ -869,22 +1017,41 @@ document.addEventListener('DOMContentLoaded', () => {
             <div style="font-weight: 700; color: #fff;">${escapeHtml(w.name || 'Anonymous')}</div>
           </td>
           <td>
+            <div style="color: #ffe680; font-weight: 600; font-size: 0.88rem;">${escapeHtml(w.organization || '—')}</div>
+          </td>
+          <td>
             <span class="prize-badge">${prizeIcon} ${escapeHtml(prizeName)}</span>
           </td>
           <td>${codeHtml}</td>
           <td>${escapeHtml(w.email || '-')}</td>
           <td>${escapeHtml(w.phone || '-')}</td>
+          <td>
+            <input type="text" class="table-remark-input" data-id="${w.id}" value="${escapeHtml(w.remark || '')}" placeholder="Add remark...">
+          </td>
           <td style="color: var(--text-muted); font-size: 0.85rem;">${formattedDate}</td>
           <td>${statusHtml}</td>
         </tr>
       `;
     }).join('');
+
+    // Attach listeners so remarks typed directly into table cells auto-save in real-time
+    winnersTableBody.querySelectorAll('.table-remark-input').forEach(input => {
+      input.addEventListener('change', (e) => {
+        const id = e.target.getAttribute('data-id');
+        const val = e.target.value.trim();
+        if (id) {
+          store.updateRemark(id, val);
+          const cached = allWinnersCache.find(x => x.id === id);
+          if (cached) cached.remark = val;
+        }
+      });
+    });
   }
 
   tableSearch.addEventListener('input', renderFilteredTable);
 
   // ----------------------------------------------------
-  // Export CSV Action
+  // Export CSV Action (Includes Organisation & Remarks)
   // ----------------------------------------------------
   btnExportCsv.addEventListener('click', () => {
     if (allWinnersCache.length === 0) {
@@ -892,15 +1059,18 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const headers = ['Record ID', 'Full Name', 'Email Address', 'Phone Number', 'Prize Won', 'Claim Code', 'Date & Time'];
+    const headers = ['Record ID', 'Full Name', 'Organisation', 'Email Address', 'Phone Number', 'Prize Won', 'Claim Code', 'Remarks', 'Date & Time', 'Status'];
     const rows = allWinnersCache.map(w => [
       `"${w.id || ''}"`,
       `"${(w.name || '').replace(/"/g, '""')}"`,
+      `"${(w.organization || '').replace(/"/g, '""')}"`,
       `"${(w.email || '').replace(/"/g, '""')}"`,
       `"${(w.phone || '').replace(/"/g, '""')}"`,
       `"${(w.prize && w.prize.name ? w.prize.name : (w.prize || '')).replace(/"/g, '""')}"`,
       `"${(w.claimCode || '').replace(/"/g, '""')}"`,
-      `"${w.timestamp ? new Date(w.timestamp).toLocaleString() : ''}"`
+      `"${(w.remark || '').replace(/"/g, '""')}"`,
+      `"${w.timestamp ? new Date(w.timestamp).toLocaleString() : ''}"`,
+      `"${(w.isTryAgain ? 'Try Again' : 'Won & Logged')}"`
     ]);
 
     const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');

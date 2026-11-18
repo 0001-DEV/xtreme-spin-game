@@ -90,7 +90,7 @@ const server = http.createServer((req, res) => {
     req.on('end', () => {
       try {
         const payload = JSON.parse(body || '{}');
-        const { name, email, phone, prize, claimCode, timestamp } = payload;
+        const { name, organization, email, phone, prize, claimCode, remark, timestamp } = payload;
 
         if (!name || !email || !phone || !prize) {
           return sendJson(res, 400, {
@@ -101,12 +101,14 @@ const server = http.createServer((req, res) => {
 
         const winners = readWinners();
         const newEntry = {
-          id: 'WIN-' + Date.now().toString(36).toUpperCase() + '-' + Math.floor(Math.random() * 1000),
+          id: (payload.id || ('WIN-' + Date.now().toString(36).toUpperCase() + '-' + Math.floor(Math.random() * 1000))),
           name: String(name).trim(),
+          organization: organization ? String(organization).trim() : '',
           email: String(email).trim().toLowerCase(),
           phone: String(phone).trim(),
           prize: prize,
           claimCode: claimCode || ('XTR-' + Math.random().toString(36).substring(2, 6).toUpperCase() + '-' + Math.floor(1000 + Math.random() * 9000)),
+          remark: remark ? String(remark).trim() : '',
           timestamp: timestamp || new Date().toISOString()
         };
 
@@ -115,7 +117,7 @@ const server = http.createServer((req, res) => {
         saveWinners(winners);
 
         const prizeName = newEntry.prize.name || newEntry.prize;
-        console.log(`[SPIN LOGGED] ${newEntry.name} (${newEntry.email}) won: ${prizeName} [Code: ${newEntry.claimCode}]`);
+        console.log(`[SPIN LOGGED] ${newEntry.name} (${newEntry.organization || 'No Org'} - ${newEntry.email}) won: ${prizeName} [Code: ${newEntry.claimCode}]`);
 
         return sendJson(res, 201, {
           success: true,
@@ -129,17 +131,44 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // API ROUTE: POST /api/remark (Update remark for existing record)
+  if (pathname === '/api/remark' && method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        const { id, remark } = payload;
+        if (!id) {
+          return sendJson(res, 400, { success: false, message: 'Record ID required.' });
+        }
+        const winners = readWinners();
+        const target = winners.find(w => w.id === id);
+        if (target) {
+          target.remark = String(remark || '').trim();
+          saveWinners(winners);
+        }
+        return sendJson(res, 200, { success: true, message: 'Remark updated successfully.' });
+      } catch (err) {
+        return sendJson(res, 400, { success: false, message: 'Invalid payload.' });
+      }
+    });
+    return;
+  }
+
   // API ROUTE: GET /api/export-csv
   if (pathname === '/api/export-csv' && method === 'GET') {
     const winners = readWinners();
-    const headers = ['Record ID', 'Full Name', 'Email Address', 'Phone Number', 'Prize Won', 'Claim Code', 'Date & Time'];
+    const headers = ['Record ID', 'Full Name', 'Organisation', 'Email Address', 'Phone Number', 'Prize Won', 'Claim Code', 'Remarks', 'Date & Time'];
     const rows = winners.map(w => [
       `"${w.id || ''}"`,
       `"${(w.name || '').replace(/"/g, '""')}"`,
+      `"${(w.organization || '').replace(/"/g, '""')}"`,
       `"${(w.email || '').replace(/"/g, '""')}"`,
       `"${(w.phone || '').replace(/"/g, '""')}"`,
       `"${(w.prize && w.prize.name ? w.prize.name : (w.prize || '')).replace(/"/g, '""')}"`,
       `"${(w.claimCode || '').replace(/"/g, '""')}"`,
+      `"${(w.remark || '').replace(/"/g, '""')}"`,
       `"${w.timestamp ? new Date(w.timestamp).toLocaleString() : ''}"`
     ]);
 

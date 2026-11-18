@@ -90,6 +90,14 @@
             </div>
 
             <div class="form-group">
+              <label for="userOrg">
+                <span class="label-icon">🏢</span> Organisation <span class="required">*</span>
+              </label>
+              <input type="text" id="userOrg" name="organization" placeholder="Enter organisation or company" required autocomplete="organization">
+              <span class="error-msg" id="orgError">Organisation name required.</span>
+            </div>
+
+            <div class="form-group">
               <label for="userEmail">
                 <span class="label-icon">✉️</span> Email Address <span class="required">*</span>
               </label>
@@ -103,6 +111,11 @@
               </label>
               <input type="tel" id="userPhone" name="phone" placeholder="+1 (555) 000-0000" required autocomplete="tel">
               <span class="error-msg" id="phoneError">Valid phone required.</span>
+            </div>
+
+            <!-- Duplicate Warning Alert Box -->
+            <div class="duplicate-alert" id="duplicateAlert">
+              🚫 <strong>Already Played:</strong> This email or phone number has already taken a spin! Only 1 spin per person is allowed.
             </div>
 
             <button type="submit" class="cta-spin-btn capital-btn" id="formSpinBtn">
@@ -184,17 +197,19 @@
             <tr>
               <th>#</th>
               <th>Winner Name</th>
+              <th>Organisation</th>
               <th>Prize Won</th>
               <th>Claim Code</th>
               <th>Email Address</th>
               <th>Phone Number</th>
+              <th>Remarks</th>
               <th>Date & Time</th>
               <th>Status</th>
             </tr>
           </thead>
           <tbody id="winnersTableBody">
             <tr class="empty-row">
-              <td colspan="8">
+              <td colspan="10">
                 <div class="empty-state">
                   <span class="empty-icon">🎡</span>
                   <p>No spins yet! Fill in your details above and take your first spin to see your entry appear here.</p>
@@ -218,6 +233,14 @@
       <p class="simple-win-text" id="winModalText">
         <span class="winner-highlight" id="winWinnerName">Alex</span>, you won <span class="prize-highlight" id="winPrizeName">Stainless Thermal Bottle</span>!
       </p>
+
+      <!-- Space for Remark After Playing -->
+      <div class="modal-remark-group">
+        <label for="modalRemarkInput" class="modal-remark-label">
+          <span>✍️ Remark / Note:</span>
+        </label>
+        <textarea id="modalRemarkInput" class="modal-remark-textarea" rows="2" placeholder="Input remarks or notes here (e.g. order details, booth note, follow-up)..."></textarea>
+      </div>
 
       <button class="btn-claim-primary simple-ok-btn" id="btnClaimPrize">
         OK
